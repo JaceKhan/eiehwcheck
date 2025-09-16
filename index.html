@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A7-1 Let's Speak 1 - 숙제 체크 관리 시스템</title>
+    
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="bg-gray-50 font-sans">
+    <!-- Header -->
+    <header class="bg-blue-600 text-white shadow-lg">
+        <div class="container mx-auto px-4 py-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <div class="flex items-center gap-3 mb-2">
+                        <h1 class="text-2xl md:text-3xl font-bold" id="current-class-title">A7-1 Let's Speak 1</h1>
+                        <button id="manage-classes-btn" class="text-blue-100 hover:text-white text-sm px-3 py-1 border border-blue-300 rounded-md hover:bg-blue-500 transition-colors">
+                            <i class="fas fa-cog mr-1"></i>반 관리
+                        </button>
+                    </div>
+                    <p class="text-blue-100 mt-1">숙제 체크 관리 시스템</p>
+                </div>
+                <div class="text-sm text-blue-100">
+                    <div class="mb-2">
+                        <select id="class-selector" class="bg-blue-500 border border-blue-400 text-white text-sm rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-white">
+                            <option value="A7-1 Let's Speak 1">A7-1 Let's Speak 1</option>
+                        </select>
+                    </div>
+                    <div>
+                        <i class="fas fa-clock mr-1"></i>
+                        <span id="class-schedule">월-금 15:10-16:00</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-8">
+        <!-- Navigation Tabs -->
+        <div class="mb-8">
+            <div class="border-b border-gray-200">
+                <nav class="-mb-px flex space-x-8">
+                    <button id="tab-students" class="tab-button active border-b-2 border-blue-500 py-2 px-1 text-sm font-medium text-blue-600">
+                        <i class="fas fa-users mr-2"></i>학생 관리
+                    </button>
+                    <button id="tab-homework" class="tab-button border-b-2 border-transparent py-2 px-1 text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                        <i class="fas fa-clipboard-check mr-2"></i>숙제 체크리스트
+                    </button>
+                    <button id="tab-statistics" class="tab-button border-b-2 border-transparent py-2 px-1 text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                        <i class="fas fa-chart-bar mr-2"></i>수행률 통계
+                    </button>
+                </nav>
+            </div>
+        </div>
+
+        <!-- Students Tab Content -->
+        <div id="content-students" class="tab-content">
+            <div class="bg-white rounded-lg shadow-md">
+                <div class="p-6 border-b border-gray-200">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                        <h2 class="text-xl font-semibold text-gray-900">
+                            <i class="fas fa-users text-blue-600 mr-2"></i>학생 명단
+                        </h2>
+                        <button id="add-student-btn" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 flex items-center">
+                            <i class="fas fa-plus mr-2"></i>학생 추가
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Student List -->
+                <div class="p-6">
+                    <div id="student-list" class="space-y-3">
+                        <!-- Students will be loaded here -->
+                    </div>
+                    
+                    <div id="empty-students" class="text-center py-8 text-gray-500 hidden">
+                        <i class="fas fa-user-plus text-4xl mb-4 text-gray-400"></i>
+                        <p>등록된 학생이 없습니다. 학생을 추가해보세요.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Add Student Form -->
+            <div id="add-student-form" class="mt-6 bg-white rounded-lg shadow-md hidden">
+                <div class="p-6 border-b border-gray-200">
+                    <h3 class="text-lg font-semibold text-gray-900">새 학생 추가</h3>
+                </div>
+                <div class="p-6">
+                    <form id="student-form" class="space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label for="korean-name" class="block text-sm font-medium text-gray-700 mb-1">한국어 이름</label>
+                                <input type="text" id="korean-name" name="korean-name" required 
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                       placeholder="예: 김태이">
+                            </div>
+                            <div>
+                                <label for="english-name" class="block text-sm font-medium text-gray-700 mb-1">영어 이름</label>
+                                <input type="text" id="english-name" name="english-name" required
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                       placeholder="예: Tay">
+                            </div>
+                        </div>
+                        <div class="flex gap-3">
+                            <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700">
+                                <i class="fas fa-save mr-2"></i>저장
+                            </button>
+                            <button type="button" id="cancel-student-btn" class="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">
+                                <i class="fas fa-times mr-2"></i>취소
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Homework Tab Content -->
+        <div id="content-homework" class="tab-content hidden">
+            <div class="bg-white rounded-lg shadow-md">
+                <div class="p-6 border-b border-gray-200">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                        <h2 class="text-xl font-semibold text-gray-900">
+                            <i class="fas fa-clipboard-check text-green-600 mr-2"></i>주간 숙제 체크리스트
+                        </h2>
+                        <div class="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+                            <div class="flex items-center gap-2">
+                                <label for="week-selector" class="text-sm font-medium text-gray-700">주간 선택:</label>
+                                <input type="week" id="week-selector" 
+                                       class="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <label for="teacher-name" class="text-sm font-medium text-gray-700">선생님:</label>
+                                <select id="teacher-name" class="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    <option value="Erica T">Erica T</option>
+                                    <option value="Hailey T">Hailey T</option>
+                                    <option value="김선생님">김선생님</option>
+                                    <option value="박선생님">박선생님</option>
+                                    <option value="이선생님">이선생님</option>
+                                    <option value="기타">기타</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Homework Checklist -->
+                <div class="p-6">
+                    <div id="homework-table-container">
+                        <div id="homework-table" class="overflow-x-auto">
+                            <!-- Homework table will be generated here -->
+                        </div>
+                    </div>
+                    
+                    <div id="no-students-homework" class="text-center py-8 text-gray-500 hidden">
+                        <i class="fas fa-users text-4xl mb-4 text-gray-400"></i>
+                        <p>먼저 학생을 등록해주세요.</p>
+                        <button id="go-to-students" class="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
+                            학생 관리로 이동
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistics Tab Content -->
+        <div id="content-statistics" class="tab-content hidden">
+            <div class="bg-white rounded-lg shadow-md">
+                <div class="p-6 border-b border-gray-200">
+                    <h2 class="text-xl font-semibold text-gray-900">
+                        <i class="fas fa-chart-bar text-purple-600 mr-2"></i>수행률 통계
+                    </h2>
+                    <p class="text-gray-600 mt-1">기간별 학생들의 숙제 완료율을 확인하세요</p>
+                </div>
+
+                <div class="p-6">
+                    <!-- Date Range Selector -->
+                    <div class="mb-6 bg-gray-50 p-4 rounded-lg">
+                        <h4 class="text-lg font-medium text-gray-900 mb-4">기간 선택</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                            <div>
+                                <label for="start-date" class="block text-sm font-medium text-gray-700 mb-1">시작일</label>
+                                <input type="date" id="start-date" 
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500">
+                            </div>
+                            <div>
+                                <label for="end-date" class="block text-sm font-medium text-gray-700 mb-1">종료일</label>
+                                <input type="date" id="end-date" 
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500">
+                            </div>
+                            <div>
+                                <button id="calculate-stats" class="w-full bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700">
+                                    <i class="fas fa-calculator mr-2"></i>통계 계산
+                                </button>
+                            </div>
+                        </div>
+                        <div class="mt-3 flex flex-wrap gap-2 justify-between items-center">
+                            <div class="flex gap-2">
+                                <button id="last-week" class="text-sm px-3 py-1 bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200">
+                                    지난 1주일
+                                </button>
+                                <button id="last-month" class="text-sm px-3 py-1 bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200">
+                                    지난 1개월
+                                </button>
+                                <button id="this-month" class="text-sm px-3 py-1 bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200">
+                                    이번 달
+                                </button>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <label for="goal-rate" class="text-sm font-medium text-gray-700">목표 수행률:</label>
+                                <select id="goal-rate" class="px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-purple-500">
+                                    <option value="70">70%</option>
+                                    <option value="75">75%</option>
+                                    <option value="80" selected>80%</option>
+                                    <option value="85">85%</option>
+                                    <option value="90">90%</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Statistics Results -->
+                    <div id="statistics-results" class="hidden">
+                        <!-- Overall Stats -->
+                        <div class="mb-6">
+                            <h4 class="text-lg font-medium text-gray-900 mb-4">전체 수행률</h4>
+                            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                                <div class="bg-blue-50 p-4 rounded-lg">
+                                    <div class="flex items-center">
+                                        <i class="fas fa-calendar-alt text-blue-600 text-xl mr-3"></i>
+                                        <div>
+                                            <p class="text-sm text-blue-600 font-medium">조회 기간</p>
+                                            <p class="text-lg font-bold text-blue-800" id="period-display">-</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="bg-green-50 p-4 rounded-lg">
+                                    <div class="flex items-center">
+                                        <i class="fas fa-check-circle text-green-600 text-xl mr-3"></i>
+                                        <div>
+                                            <p class="text-sm text-green-600 font-medium">반 전체 완료율</p>
+                                            <p class="text-lg font-bold text-green-800" id="overall-completion">-</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="bg-purple-50 p-4 rounded-lg">
+                                    <div class="flex items-center">
+                                        <i class="fas fa-users text-purple-600 text-xl mr-3"></i>
+                                        <div>
+                                            <p class="text-sm text-purple-600 font-medium">활성 학생</p>
+                                            <p class="text-lg font-bold text-purple-800" id="active-students-count">-</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="bg-orange-50 p-4 rounded-lg">
+                                    <div class="flex items-center">
+                                        <i class="fas fa-clipboard-list text-orange-600 text-xl mr-3"></i>
+                                        <div>
+                                            <p class="text-sm text-orange-600 font-medium">총 과제 수</p>
+                                            <p class="text-lg font-bold text-orange-800" id="total-assignments">-</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Class Achievement Card -->
+                            <div id="class-achievement-card" class="bg-gradient-to-r from-pink-100 to-purple-100 border-2 border-dashed border-gray-300 rounded-xl p-6 text-center">
+                                <div class="mb-4">
+                                    <i id="achievement-icon" class="fas fa-trophy text-4xl text-gray-400 mb-3"></i>
+                                    <h5 id="achievement-title" class="text-xl font-bold text-gray-600">목표 달성 현황</h5>
+                                </div>
+                                
+                                <div class="mb-4">
+                                    <div class="w-full bg-gray-200 rounded-full h-4 mb-2">
+                                        <div id="achievement-progress" class="bg-gray-400 h-4 rounded-full transition-all duration-500" style="width: 0%"></div>
+                                    </div>
+                                    <p id="achievement-text" class="text-gray-600 font-medium">목표: 80% 이상 달성 시 과자 파티! 🍪</p>
+                                </div>
+                                
+                                <div id="achievement-message" class="text-lg font-medium text-gray-600">
+                                    통계를 계산하면 목표 달성 현황을 확인할 수 있어요!
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Student Performance Chart -->
+                        <div class="mb-6">
+                            <h4 class="text-lg font-medium text-gray-900 mb-4">학생별 수행률</h4>
+                            <div class="bg-white border rounded-lg p-4">
+                                <canvas id="student-chart" style="height: 400px;"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Daily Performance Chart -->
+                        <div class="mb-6">
+                            <h4 class="text-lg font-medium text-gray-900 mb-4">일별 완료율 추이</h4>
+                            <div class="bg-white border rounded-lg p-4">
+                                <canvas id="daily-chart" style="height: 300px;"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Detailed Table -->
+                        <div>
+                            <h4 class="text-lg font-medium text-gray-900 mb-4">상세 통계표</h4>
+                            <div class="overflow-x-auto">
+                                <table id="stats-table" class="min-w-full bg-white border border-gray-200">
+                                    <thead class="bg-gray-50">
+                                        <tr>
+                                            <th class="px-4 py-3 border-b text-left text-sm font-medium text-gray-700">학생</th>
+                                            <th class="px-4 py-3 border-b text-center text-sm font-medium text-gray-700">완료한 과제</th>
+                                            <th class="px-4 py-3 border-b text-center text-sm font-medium text-gray-700">전체 과제</th>
+                                            <th class="px-4 py-3 border-b text-center text-sm font-medium text-gray-700">완료율</th>
+                                            <th class="px-4 py-3 border-b text-center text-sm font-medium text-gray-700">등급</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="stats-table-body">
+                                        <!-- 통계 데이터가 여기에 표시됩니다 -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- No Data Message -->
+                    <div id="no-stats-data" class="text-center py-8 text-gray-500">
+                        <i class="fas fa-chart-bar text-4xl mb-4 text-gray-400"></i>
+                        <p>기간을 선택하고 "통계 계산" 버튼을 눌러주세요.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-6 mt-12">
+        <div class="container mx-auto px-4 text-center">
+            <p class="text-gray-400">© 2024 A7-1 Let's Speak 1 - 숙제 체크 관리 시스템</p>
+        </div>
+    </footer>
+
+    <!-- Class Management Modal -->
+    <div id="class-management-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto">
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-xl font-semibold text-gray-900">
+                        <i class="fas fa-chalkboard-teacher text-blue-600 mr-2"></i>반 관리
+                    </h3>
+                    <button id="close-class-modal" class="text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="p-6">
+                <!-- Add New Class Form -->
+                <div class="mb-6 bg-blue-50 p-4 rounded-lg">
+                    <h4 class="text-lg font-medium text-gray-900 mb-4">새 반 추가</h4>
+                    <form id="add-class-form" class="space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label for="new-class-name" class="block text-sm font-medium text-gray-700 mb-1">반 이름</label>
+                                <input type="text" id="new-class-name" required 
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                       placeholder="예: B3-2 Grammar Plus">
+                            </div>
+                            <div>
+                                <label for="new-class-schedule" class="block text-sm font-medium text-gray-700 mb-1">수업 시간</label>
+                                <input type="text" id="new-class-schedule" required
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                       placeholder="예: 화-목 16:10-17:00">
+                            </div>
+                        </div>
+                        <div>
+                            <label for="new-class-description" class="block text-sm font-medium text-gray-700 mb-1">설명 (선택)</label>
+                            <input type="text" id="new-class-description"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                   placeholder="예: 초급 문법반, 고급 회화반">
+                        </div>
+                        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
+                            <i class="fas fa-plus mr-2"></i>반 추가
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Existing Classes List -->
+                <div>
+                    <h4 class="text-lg font-medium text-gray-900 mb-4">내 반 목록</h4>
+                    <div id="classes-list" class="space-y-3">
+                        <!-- Classes will be loaded here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Spinner -->
+    <div id="loading-spinner" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-lg p-6 flex items-center space-x-3">
+            <i class="fas fa-spinner fa-spin text-blue-600 text-xl"></i>
+            <span class="text-gray-700">처리 중...</span>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="js/main.js"></script>
+</body>
+</html>
