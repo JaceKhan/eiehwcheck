@@ -1,7 +1,7 @@
 /**
  * A7-1 Let's Speak 1 - 숙제 체크 관리 시스템
  * Main JavaScript Application (Local Storage Version)
- * 날짜 계산 수정된 버전
+ * 개선된 버전 - 더 나은 사용자 경험과 성능
  */
 
 class HomeworkCheckSystem {
@@ -14,6 +14,7 @@ class HomeworkCheckSystem {
         this.currentClass = null;
         this.studentChart = null;
         this.dailyChart = null;
+        this.isLoading = false;
         
         this.init();
     }
@@ -43,8 +44,10 @@ class HomeworkCheckSystem {
         document.getElementById('student-form').addEventListener('submit', (e) => this.handleAddStudent(e));
         document.getElementById('go-to-students').addEventListener('click', () => this.showTab('students'));
 
-        // Homework management
-        document.getElementById('week-selector').addEventListener('change', (e) => this.handleWeekChange(e));
+        // Homework management - 주간 네비게이션 버튼 추가
+        document.getElementById('prev-week').addEventListener('click', () => this.navigateWeek(-1));
+        document.getElementById('next-week').addEventListener('click', () => this.navigateWeek(1));
+        document.getElementById('current-week').addEventListener('click', () => this.goToCurrentWeek());
         document.getElementById('teacher-name').addEventListener('change', (e) => this.handleTeacherChange(e));
 
         // Class management
@@ -58,6 +61,9 @@ class HomeworkCheckSystem {
         document.getElementById('last-week').addEventListener('click', () => this.setDateRange(7));
         document.getElementById('last-month').addEventListener('click', () => this.setDateRange(30));
         document.getElementById('this-month').addEventListener('click', () => this.setCurrentMonth());
+
+        // 키보드 단축키
+        document.addEventListener('keydown', (e) => this.handleKeyboardShortcuts(e));
     }
 
     /**
@@ -126,8 +132,8 @@ class HomeworkCheckSystem {
      * 주간 선택기 초기값 설정
      */
     setCurrentWeek() {
-        document.getElementById('week-selector').value = this.currentWeek;
         document.getElementById('teacher-name').value = this.currentTeacher;
+        this.updateWeekDisplay();
     }
 
     /**
@@ -360,9 +366,9 @@ class HomeworkCheckSystem {
     }
 
     /**
-     * 학생 추가 처리
+     * 학생 추가 처리 (기존 메서드 - 새로운 것으로 교체됨)
      */
-    handleAddStudent(event) {
+    handleAddStudentOld(event) {
         event.preventDefault();
         
         const koreanName = document.getElementById('korean-name').value.trim();
@@ -1361,6 +1367,248 @@ document.addEventListener('DOMContentLoaded', () => {
     homeworkSystem = new HomeworkCheckSystem();
 });
 
+    /**
+     * 주간 네비게이션
+     */
+    navigateWeek(direction) {
+        const [year, weekPart] = this.currentWeek.split('-W');
+        const weekNum = parseInt(weekPart);
+        const newWeekNum = weekNum + direction;
+        
+        if (newWeekNum < 1) {
+            // 이전 년도로 이동
+            const prevYear = parseInt(year) - 1;
+            const lastWeekOfPrevYear = this.getLastWeekOfYear(prevYear);
+            this.currentWeek = `${prevYear}-W${lastWeekOfPrevYear.toString().padStart(2, '0')}`;
+        } else if (newWeekNum > 52) {
+            // 다음 년도로 이동
+            const nextYear = parseInt(year) + 1;
+            this.currentWeek = `${nextYear}-W01`;
+        } else {
+            this.currentWeek = `${year}-W${newWeekNum.toString().padStart(2, '0')}`;
+        }
+        
+        this.updateWeekDisplay();
+        this.renderHomeworkTable();
+    }
+
+    /**
+     * 현재 주로 이동
+     */
+    goToCurrentWeek() {
+        this.currentWeek = this.getCurrentWeek();
+        this.updateWeekDisplay();
+        this.renderHomeworkTable();
+    }
+
+    /**
+     * 주간 표시 업데이트
+     */
+    updateWeekDisplay() {
+        const weekDates = this.getWeekDates(this.currentWeek);
+        const startDate = new Date(weekDates[0]);
+        const endDate = new Date(weekDates[4]);
+        
+        const formatDate = (date) => {
+            return `${date.getMonth() + 1}/${date.getDate()}`;
+        };
+        
+        document.getElementById('week-display').textContent = 
+            `${formatDate(startDate)} - ${formatDate(endDate)}`;
+    }
+
+    /**
+     * 년도의 마지막 주 번호 반환
+     */
+    getLastWeekOfYear(year) {
+        const dec31 = new Date(year, 11, 31);
+        const jan1 = new Date(year, 0, 1);
+        const firstDay = jan1.getDay();
+        
+        // 1월 첫 번째 월요일 찾기
+        let firstMonday;
+        if (firstDay <= 1) {
+            firstMonday = new Date(year, 0, firstDay === 0 ? 2 : 1);
+        } else {
+            firstMonday = new Date(year, 0, 1 + (8 - firstDay));
+        }
+        
+        const weeksDiff = Math.floor((dec31 - firstMonday) / (7 * 24 * 60 * 60 * 1000));
+        return weeksDiff + 1;
+    }
+
+    /**
+     * 키보드 단축키 처리
+     */
+    handleKeyboardShortcuts(e) {
+        // Ctrl/Cmd + 숫자키로 탭 전환
+        if ((e.ctrlKey || e.metaKey) && e.key >= '1' && e.key <= '3') {
+            e.preventDefault();
+            const tabs = ['students', 'homework', 'statistics'];
+            const tabIndex = parseInt(e.key) - 1;
+            if (tabs[tabIndex]) {
+                this.showTab(tabs[tabIndex]);
+            }
+        }
+        
+        // Ctrl/Cmd + N으로 새 학생 추가
+        if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+            e.preventDefault();
+            this.showAddStudentForm();
+        }
+        
+        // Escape로 모달 닫기
+        if (e.key === 'Escape') {
+            this.hideClassManagement();
+            this.hideAddStudentForm();
+        }
+    }
+
+    /**
+     * 로딩 상태 표시/숨김
+     */
+    showLoading() {
+        this.isLoading = true;
+        document.getElementById('loading-spinner').classList.remove('hidden');
+    }
+
+    hideLoading() {
+        this.isLoading = false;
+        document.getElementById('loading-spinner').classList.add('hidden');
+    }
+
+    /**
+     * 개선된 성공 메시지 표시
+     */
+    showSuccess(message) {
+        this.showNotification(message, 'success');
+        
+        // 성공 애니메이션 추가
+        const activeElement = document.activeElement;
+        if (activeElement) {
+            activeElement.classList.add('success-animation');
+            setTimeout(() => {
+                activeElement.classList.remove('success-animation');
+            }, 600);
+        }
+    }
+
+    /**
+     * 개선된 알림 메시지 표시
+     */
+    showNotification(message, type) {
+        const notification = document.createElement('div');
+        notification.className = `fixed top-4 right-4 z-50 p-4 rounded-xl shadow-xl max-w-sm notification ${
+            type === 'success' ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white' : 
+            'bg-gradient-to-r from-red-500 to-pink-600 text-white'
+        }`;
+        
+        notification.innerHTML = `
+            <div class="flex items-center space-x-3">
+                <div class="flex-shrink-0">
+                    <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'} text-xl"></i>
+                </div>
+                <div class="flex-1">
+                    <p class="font-medium">${message}</p>
+                </div>
+                <button onclick="this.parentElement.parentElement.remove()" class="flex-shrink-0 text-white hover:text-gray-200">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        `;
+
+        document.body.appendChild(notification);
+
+        // 4초 후 자동 제거
+        setTimeout(() => {
+            if (notification.parentElement) {
+                notification.remove();
+            }
+        }, 4000);
+    }
+
+    /**
+     * 데이터 검증
+     */
+    validateStudentData(koreanName, englishName) {
+        const errors = [];
+        
+        if (!koreanName || koreanName.trim().length < 2) {
+            errors.push('한국어 이름은 2글자 이상 입력해주세요.');
+        }
+        
+        if (!englishName || englishName.trim().length < 2) {
+            errors.push('영어 이름은 2글자 이상 입력해주세요.');
+        }
+        
+        // 중복 체크
+        const isDuplicate = this.students.some(student => 
+            student.korean_name === koreanName.trim() || 
+            student.english_name === englishName.trim()
+        );
+        
+        if (isDuplicate) {
+            errors.push('이미 등록된 학생입니다.');
+        }
+        
+        return errors;
+    }
+
+    /**
+     * 개선된 학생 추가 처리
+     */
+    handleAddStudent(event) {
+        event.preventDefault();
+        
+        const koreanName = document.getElementById('korean-name').value.trim();
+        const englishName = document.getElementById('english-name').value.trim();
+
+        // 데이터 검증
+        const errors = this.validateStudentData(koreanName, englishName);
+        if (errors.length > 0) {
+            this.showError(errors.join(' '));
+            return;
+        }
+
+        this.showLoading();
+
+        try {
+            const newStudent = {
+                id: this.generateId(),
+                korean_name: koreanName,
+                english_name: englishName,
+                class_name: this.getCurrentClassName(),
+                active: true,
+                created_at: new Date().toISOString()
+            };
+
+            this.students.push(newStudent);
+            this.saveStudents();
+            
+            setTimeout(() => {
+                this.hideLoading();
+                this.hideAddStudentForm();
+                this.renderStudents();
+                this.showSuccess(`${koreanName}(${englishName}) 학생이 성공적으로 추가되었습니다.`);
+            }, 500);
+
+        } catch (error) {
+            this.hideLoading();
+            console.error('학생 추가 오류:', error);
+            this.showError('학생 추가 중 오류가 발생했습니다.');
+        }
+    }
+}
+
+// 전역 인스턴스 생성
+let homeworkSystem;
+
+// DOM 로드 완료 시 시스템 초기화
+document.addEventListener('DOMContentLoaded', () => {
+    homeworkSystem = new HomeworkCheckSystem();
+});
+
 // 개발자 도구용 전역 함수들 (콘솔에서 사용 가능)
 window.resetData = () => homeworkSystem.resetAllData();
 window.exportData = () => homeworkSystem.exportData();
+window.homeworkSystem = homeworkSystem; // 디버깅용
