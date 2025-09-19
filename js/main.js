@@ -92,20 +92,24 @@ class HomeworkCheckSystem {
     }
 
     /**
-     * 현재 주 반환 (YYYY-WXX 형식, ISO 주차 표준)
+     * 현재 주 반환 (YYYY-WXX 형식)
      */
     getCurrentWeek() {
         const now = new Date();
         const year = now.getFullYear();
         
-        // ISO 주차 계산
-        const jan4 = new Date(year, 0, 4); // 1월 4일
-        const jan4Day = jan4.getDay(); // 1월 4일의 요일
+        // 1월 1일부터 시작해서 첫 번째 월요일 찾기
+        const jan1 = new Date(year, 0, 1);
+        const jan1Day = jan1.getDay();
         
-        // 1월 4일이 속한 주의 월요일 찾기
-        const mondayOffset = jan4Day === 0 ? -6 : 1 - jan4Day;
-        const firstMonday = new Date(jan4);
-        firstMonday.setDate(jan4.getDate() + mondayOffset);
+        let firstMonday;
+        if (jan1Day === 1) {
+            firstMonday = new Date(jan1);
+        } else {
+            const daysToMonday = jan1Day === 0 ? 1 : 8 - jan1Day;
+            firstMonday = new Date(jan1);
+            firstMonday.setDate(jan1.getDate() + daysToMonday);
+        }
         
         // 현재 날짜가 속한 주의 월요일 찾기
         const currentDay = now.getDay();
@@ -116,23 +120,6 @@ class HomeworkCheckSystem {
         // 주차 계산
         const daysDiff = Math.floor((currentMonday - firstMonday) / (24 * 60 * 60 * 1000));
         const weekNumber = Math.floor(daysDiff / 7) + 1;
-        
-        // 연도 조정 (1월 첫 주가 이전 연도에 속하는 경우)
-        if (weekNumber <= 0) {
-            const prevYear = year - 1;
-            const prevJan4 = new Date(prevYear, 0, 4);
-            const prevJan4Day = prevJan4.getDay();
-            const prevMondayOffset = prevJan4Day === 0 ? -6 : 1 - prevJan4Day;
-            const prevFirstMonday = new Date(prevJan4);
-            prevFirstMonday.setDate(prevJan4.getDate() + prevMondayOffset);
-            
-            const prevDaysDiff = Math.floor((currentMonday - prevFirstMonday) / (24 * 60 * 60 * 1000));
-            const prevWeekNumber = Math.floor(prevDaysDiff / 7) + 1;
-            
-            if (prevWeekNumber > 0) {
-                return `${prevYear}-W${prevWeekNumber.toString().padStart(2, '0')}`;
-            }
-        }
         
         return `${year}-W${weekNumber.toString().padStart(2, '0')}`;
     }
@@ -534,21 +521,26 @@ class HomeworkCheckSystem {
     }
 
     /**
-     * 주간 날짜 배열 반환 (ISO 주차 표준 사용)
+     * 주간 날짜 배열 반환 (정확한 월요일 기준)
      */
     getWeekDates(weekString) {
         const [year, week] = weekString.split('-W');
         const yearNum = parseInt(year);
         const weekNum = parseInt(week);
         
-        // ISO 주차의 첫 번째 날(월요일) 계산
-        const jan4 = new Date(yearNum, 0, 4); // 1월 4일
-        const jan4Day = jan4.getDay(); // 1월 4일의 요일 (0=일요일, 1=월요일, ...)
+        // 1월 1일부터 시작해서 첫 번째 월요일 찾기
+        const jan1 = new Date(yearNum, 0, 1);
+        const jan1Day = jan1.getDay(); // 0=일요일, 1=월요일, 2=화요일, ...
         
-        // 1월 4일이 속한 주의 월요일 찾기
-        const mondayOffset = jan4Day === 0 ? -6 : 1 - jan4Day;
-        const firstMonday = new Date(jan4);
-        firstMonday.setDate(jan4.getDate() + mondayOffset);
+        // 첫 번째 월요일 계산 (1월 1일이 월요일이면 그대로, 아니면 다음 월요일)
+        let firstMonday;
+        if (jan1Day === 1) {
+            firstMonday = new Date(jan1);
+        } else {
+            const daysToMonday = jan1Day === 0 ? 1 : 8 - jan1Day; // 일요일이면 1일 후, 아니면 다음 월요일까지
+            firstMonday = new Date(jan1);
+            firstMonday.setDate(jan1.getDate() + daysToMonday);
+        }
         
         // 해당 주차의 월요일 계산
         const targetMonday = new Date(firstMonday);
@@ -1383,4 +1375,25 @@ window.testWeekDates = (weekString) => {
         console.log(`${weekdays[index]} (${date}): 실제 요일 ${dayNames[actualDay]}`);
     });
     return dates;
+};
+
+// 2025년 9월 22일이 월요일인지 확인하는 테스트
+window.testSpecificDate = () => {
+    const testDate = new Date('2025-09-22');
+    console.log(`2025-09-22의 요일: ${['일', '월', '화', '수', '목', '금', '토'][testDate.getDay()]}`);
+    
+    // 2025년 9월 22일이 포함된 주차 찾기
+    const year = 2025;
+    const month = 8; // 9월 (0부터 시작)
+    const day = 22;
+    
+    // 해당 날짜가 속한 주의 월요일 찾기
+    const targetDate = new Date(year, month, day);
+    const dayOfWeek = targetDate.getDay();
+    const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+    const monday = new Date(targetDate);
+    monday.setDate(targetDate.getDate() + mondayOffset);
+    
+    console.log(`해당 주의 월요일: ${monday.toISOString().split('T')[0]}`);
+    console.log(`해당 주의 월요일 요일: ${['일', '월', '화', '수', '목', '금', '토'][monday.getDay()]}`);
 };
