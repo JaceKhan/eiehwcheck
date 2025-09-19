@@ -98,19 +98,20 @@ class HomeworkCheckSystem {
         const now = new Date();
         const year = now.getFullYear();
         
-        // ISO 8601 주차 표준 사용 (브라우저와 동일)
-        
-        // 1월 4일이 속한 주의 월요일을 찾기
-        const jan4 = new Date(year, 0, 4);
-        const jan4Day = jan4.getDay();
+        // 1월 1일부터 시작해서 첫 번째 월요일 찾기
+        const jan1 = new Date(year, 0, 1);
+        const jan1Day = jan1.getDay();
         
         let firstMonday;
-        if (jan4Day === 1) {
-            firstMonday = new Date(jan4);
+        if (jan1Day === 1) {
+            firstMonday = new Date(jan1);
+        } else if (jan1Day === 0) {
+            firstMonday = new Date(jan1);
+            firstMonday.setDate(jan1.getDate() + 1);
         } else {
-            const mondayOffset = jan4Day === 0 ? -6 : 1 - jan4Day;
-            firstMonday = new Date(jan4);
-            firstMonday.setDate(jan4.getDate() + mondayOffset);
+            const daysToMonday = 8 - jan1Day;
+            firstMonday = new Date(jan1);
+            firstMonday.setDate(jan1.getDate() + daysToMonday);
         }
         
         // 현재 날짜가 속한 주의 월요일 찾기
@@ -122,23 +123,6 @@ class HomeworkCheckSystem {
         // 주차 계산
         const daysDiff = Math.floor((currentMonday - firstMonday) / (24 * 60 * 60 * 1000));
         const weekNumber = Math.floor(daysDiff / 7) + 1;
-        
-        // 연도 조정 (1월 첫 주가 이전 연도에 속하는 경우)
-        if (weekNumber <= 0) {
-            const prevYear = year - 1;
-            const prevJan4 = new Date(prevYear, 0, 4);
-            const prevJan4Day = prevJan4.getDay();
-            const prevMondayOffset = prevJan4Day === 0 ? -6 : 1 - prevJan4Day;
-            const prevFirstMonday = new Date(prevJan4);
-            prevFirstMonday.setDate(prevJan4.getDate() + prevMondayOffset);
-            
-            const prevDaysDiff = Math.floor((currentMonday - prevFirstMonday) / (24 * 60 * 60 * 1000));
-            const prevWeekNumber = Math.floor(prevDaysDiff / 7) + 1;
-            
-            if (prevWeekNumber > 0) {
-                return `${prevYear}-W${prevWeekNumber.toString().padStart(2, '0')}`;
-            }
-        }
         
         return `${year}-W${weekNumber.toString().padStart(2, '0')}`;
     }
@@ -547,21 +531,27 @@ class HomeworkCheckSystem {
         const yearNum = parseInt(year);
         const weekNum = parseInt(week);
         
-        // 브라우저의 input[type="week"]과 동일한 방식으로 계산
-        // ISO 8601 주차 표준 사용
+        // 브라우저의 input[type="week"]과 정확히 동일한 방식으로 계산
+        // JavaScript의 Date 객체를 사용한 정확한 계산
         
-        // 1월 4일이 속한 주의 월요일을 찾기 (ISO 표준)
-        const jan4 = new Date(yearNum, 0, 4);
-        const jan4Day = jan4.getDay();
+        // 1월 1일부터 시작
+        const jan1 = new Date(yearNum, 0, 1);
+        const jan1Day = jan1.getDay(); // 0=일요일, 1=월요일, 2=화요일, ...
         
-        // 1월 4일이 속한 주의 월요일 계산
+        // 첫 번째 월요일 찾기
         let firstMonday;
-        if (jan4Day === 1) {
-            firstMonday = new Date(jan4);
+        if (jan1Day === 1) {
+            // 1월 1일이 월요일이면 그대로
+            firstMonday = new Date(jan1);
+        } else if (jan1Day === 0) {
+            // 1월 1일이 일요일이면 다음날(월요일)
+            firstMonday = new Date(jan1);
+            firstMonday.setDate(jan1.getDate() + 1);
         } else {
-            const mondayOffset = jan4Day === 0 ? -6 : 1 - jan4Day;
-            firstMonday = new Date(jan4);
-            firstMonday.setDate(jan4.getDate() + mondayOffset);
+            // 그 외의 경우 다음 월요일까지의 일수 계산
+            const daysToMonday = 8 - jan1Day;
+            firstMonday = new Date(jan1);
+            firstMonday.setDate(jan1.getDate() + daysToMonday);
         }
         
         // 해당 주차의 월요일 계산
@@ -1420,6 +1410,45 @@ window.testBrowserWeek = () => {
     });
     
     return ourDates;
+};
+
+// 간단한 테스트 함수
+window.testCurrentWeek = () => {
+    const currentWeek = homeworkSystem.getCurrentWeek();
+    console.log(`현재 주차: ${currentWeek}`);
+    const dates = homeworkSystem.getWeekDates(currentWeek);
+    console.log(`현재 주차의 날짜들:`, dates);
+    
+    const weekdays = ['월', '화', '수', '목', '금'];
+    dates.forEach((date, index) => {
+        const dateObj = new Date(date);
+        const actualDay = dateObj.getDay();
+        const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
+        console.log(`${weekdays[index]} (${date}): 실제 요일 ${dayNames[actualDay]}`);
+    });
+    
+    return dates;
+};
+
+// 2025년 39주차 특별 테스트
+window.testWeek39 = () => {
+    console.log('=== 2025년 39주차 테스트 ===');
+    const dates = homeworkSystem.getWeekDates('2025-W39');
+    console.log('계산된 날짜들:', dates);
+    
+    const weekdays = ['월', '화', '수', '목', '금'];
+    dates.forEach((date, index) => {
+        const dateObj = new Date(date);
+        const actualDay = dateObj.getDay();
+        const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
+        console.log(`${weekdays[index]} (${date}): 실제 요일 ${dayNames[actualDay]}`);
+    });
+    
+    // 2025년 9월 22일이 월요일인지 확인
+    const sep22 = new Date('2025-09-22');
+    console.log(`2025-09-22의 요일: ${['일', '월', '화', '수', '목', '금', '토'][sep22.getDay()]}`);
+    
+    return dates;
 };
 
 // 2025년 9월 22일이 월요일인지 확인하는 테스트
