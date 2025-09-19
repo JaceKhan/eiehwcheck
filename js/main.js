@@ -1,6 +1,7 @@
 /**
  * A7-1 Let's Speak 1 - 숙제 체크 관리 시스템
  * Main JavaScript Application (Local Storage Version)
+ * 날짜 계산 수정된 버전
  */
 
 class HomeworkCheckSystem {
@@ -92,39 +93,33 @@ class HomeworkCheckSystem {
     }
 
     /**
-     * 현재 주 반환 (브라우저 input[type="week"]과 동일한 방식)
+     * 현재 주 반환 (간단한 방법, HTML5 week input과 호환)
      */
     getCurrentWeek() {
-        const now = new Date();
-        const year = now.getFullYear();
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = today.getMonth();
+        const date = today.getDate();
+        const day = today.getDay();
         
-        // 1월 1일부터 시작해서 첫 번째 월요일 찾기
-        const jan1 = new Date(year, 0, 1);
-        const jan1Day = jan1.getDay();
+        // 이번 주 월요일 찾기 (일요일을 0으로, 월요일을 1로 계산)
+        const monday = new Date(year, month, date - (day === 0 ? 6 : day - 1));
         
-        let firstMonday;
-        if (jan1Day === 1) {
-            firstMonday = new Date(jan1);
-        } else if (jan1Day === 0) {
-            firstMonday = new Date(jan1);
-            firstMonday.setDate(jan1.getDate() + 1);
-        } else {
-            const daysToMonday = 8 - jan1Day;
-            firstMonday = new Date(jan1);
-            firstMonday.setDate(jan1.getDate() + daysToMonday);
+        // 1월 첫 번째 월요일부터 몇 주째인지 계산
+        const firstMonday = new Date(year, 0, 1);
+        const firstDay = firstMonday.getDay();
+        
+        // 1월 1일이 월요일이 아니라면 첫 번째 월요일 찾기
+        if (firstDay !== 1) {
+            const daysToMonday = firstDay === 0 ? 1 : 8 - firstDay;
+            firstMonday.setDate(1 + daysToMonday);
         }
         
-        // 현재 날짜가 속한 주의 월요일 찾기
-        const currentDay = now.getDay();
-        const currentMondayOffset = currentDay === 0 ? -6 : 1 - currentDay;
-        const currentMonday = new Date(now);
-        currentMonday.setDate(now.getDate() + currentMondayOffset);
+        // 현재 월요일까지 몇 주인지 계산
+        const weeksDiff = Math.floor((monday - firstMonday) / (7 * 24 * 60 * 60 * 1000));
+        const weekNum = weeksDiff + 1;
         
-        // 주차 계산
-        const daysDiff = Math.floor((currentMonday - firstMonday) / (24 * 60 * 60 * 1000));
-        const weekNumber = Math.floor(daysDiff / 7) + 1;
-        
-        return `${year}-W${weekNumber.toString().padStart(2, '0')}`;
+        return `${year}-W${weekNum.toString().padStart(2, '0')}`;
     }
 
     /**
@@ -524,43 +519,32 @@ class HomeworkCheckSystem {
     }
 
     /**
-     * 주간 날짜 배열 반환 (브라우저 input[type="week"]과 동일한 방식)
+     * 주간 날짜 배열 반환 (수정된 버전)
      */
     getWeekDates(weekString) {
-        const [year, week] = weekString.split('-W');
-        const yearNum = parseInt(year);
-        const weekNum = parseInt(week);
+        const [year, weekPart] = weekString.split('-W');
+        const weekNum = parseInt(weekPart);
         
-        // 브라우저의 input[type="week"]과 정확히 동일한 방식으로 계산
-        // JavaScript의 Date 객체를 사용한 정확한 계산
+        // 해당 년도 1월 1일
+        const jan1 = new Date(parseInt(year), 0, 1);
+        const jan1Day = jan1.getDay(); // 0=일요일, 1=월요일, ...
         
-        // 1월 1일부터 시작
-        const jan1 = new Date(yearNum, 0, 1);
-        const jan1Day = jan1.getDay(); // 0=일요일, 1=월요일, 2=화요일, ...
-        
-        // 첫 번째 월요일 찾기
+        // 1월 첫 번째 월요일 찾기
         let firstMonday;
-        if (jan1Day === 1) {
-            // 1월 1일이 월요일이면 그대로
-            firstMonday = new Date(jan1);
-        } else if (jan1Day === 0) {
-            // 1월 1일이 일요일이면 다음날(월요일)
-            firstMonday = new Date(jan1);
-            firstMonday.setDate(jan1.getDate() + 1);
+        if (jan1Day <= 1) {
+            // 1월 1일이 일요일(0) 또는 월요일(1)인 경우
+            firstMonday = new Date(parseInt(year), 0, jan1Day === 0 ? 2 : 1);
         } else {
-            // 그 외의 경우 다음 월요일까지의 일수 계산
-            const daysToMonday = 8 - jan1Day;
-            firstMonday = new Date(jan1);
-            firstMonday.setDate(jan1.getDate() + daysToMonday);
+            // 1월 1일이 화요일 이후인 경우
+            firstMonday = new Date(parseInt(year), 0, 1 + (8 - jan1Day));
         }
         
-        // 해당 주차의 월요일 계산
+        // 해당 주의 월요일 계산 (weekNum-1 주 후)
         const targetMonday = new Date(firstMonday);
         targetMonday.setDate(firstMonday.getDate() + (weekNum - 1) * 7);
-        
-        // 월요일부터 금요일까지의 날짜 배열 생성
+
         const dates = [];
-        for (let i = 0; i < 5; i++) {
+        for (let i = 0; i < 5; i++) { // 월-금
             const date = new Date(targetMonday);
             date.setDate(targetMonday.getDate() + i);
             dates.push(date.toISOString().split('T')[0]);
@@ -631,59 +615,6 @@ class HomeworkCheckSystem {
      */
     handleTeacherChange(event) {
         this.currentTeacher = event.target.value;
-    }
-
-    /**
-     * 성공 메시지 표시
-     */
-    showSuccess(message) {
-        this.showNotification(message, 'success');
-    }
-
-    /**
-     * 오류 메시지 표시
-     */
-    showError(message) {
-        this.showNotification(message, 'error');
-    }
-
-    /**
-     * 알림 메시지 표시
-     */
-    showNotification(message, type) {
-        const notification = document.createElement('div');
-        notification.className = `fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg max-w-sm ${
-            type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
-        }`;
-        notification.innerHTML = `
-            <div class="flex items-center space-x-2">
-                <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i>
-                <span>${message}</span>
-            </div>
-        `;
-
-        document.body.appendChild(notification);
-
-        // 3초 후 자동 제거
-        setTimeout(() => {
-            notification.remove();
-        }, 3000);
-    }
-
-    /**
-     * 데이터 초기화 (개발/테스트용)
-     */
-    resetAllData() {
-        if (confirm('모든 데이터를 초기화하시겠습니까?\n이 작업은 되돌릴 수 없습니다.')) {
-            localStorage.removeItem('homework_students');
-            localStorage.removeItem('homework_checks');
-            this.students = [];
-            this.homeworkChecks = [];
-            this.initializeDefaultStudents();
-            this.renderStudents();
-            this.renderHomeworkTable();
-            this.showSuccess('데이터가 초기화되었습니다.');
-        }
     }
 
     /**
@@ -1337,6 +1268,26 @@ class HomeworkCheckSystem {
     }
 
     /**
+     * 데이터 초기화 (개발/테스트용)
+     */
+    resetAllData() {
+        if (confirm('모든 데이터를 초기화하시겠습니까?\n이 작업은 되돌릴 수 없습니다.')) {
+            localStorage.clear();
+            this.students = [];
+            this.homeworkChecks = [];
+            this.classes = [];
+            this.initializeDefaultClasses();
+            this.currentClass = this.classes[0].id;
+            this.loadClassData();
+            this.updateClassSelector();
+            this.updateClassDisplay();
+            this.renderStudents();
+            this.renderHomeworkTable();
+            this.showSuccess('데이터가 초기화되었습니다.');
+        }
+    }
+
+    /**
      * 데이터 내보내기 (백업용)
      */
     exportData() {
@@ -1363,6 +1314,43 @@ class HomeworkCheckSystem {
             this.showError('데이터 내보내기 중 오류가 발생했습니다.');
         }
     }
+
+    /**
+     * 성공 메시지 표시
+     */
+    showSuccess(message) {
+        this.showNotification(message, 'success');
+    }
+
+    /**
+     * 오류 메시지 표시
+     */
+    showError(message) {
+        this.showNotification(message, 'error');
+    }
+
+    /**
+     * 알림 메시지 표시
+     */
+    showNotification(message, type) {
+        const notification = document.createElement('div');
+        notification.className = `fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg max-w-sm ${
+            type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+        }`;
+        notification.innerHTML = `
+            <div class="flex items-center space-x-2">
+                <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i>
+                <span>${message}</span>
+            </div>
+        `;
+
+        document.body.appendChild(notification);
+
+        // 3초 후 자동 제거
+        setTimeout(() => {
+            notification.remove();
+        }, 3000);
+    }
 }
 
 // 전역 인스턴스 생성
@@ -1376,98 +1364,3 @@ document.addEventListener('DOMContentLoaded', () => {
 // 개발자 도구용 전역 함수들 (콘솔에서 사용 가능)
 window.resetData = () => homeworkSystem.resetAllData();
 window.exportData = () => homeworkSystem.exportData();
-window.testWeekDates = (weekString) => {
-    const dates = homeworkSystem.getWeekDates(weekString);
-    const weekdays = ['월', '화', '수', '목', '금'];
-    console.log(`주차 ${weekString}의 날짜들:`);
-    dates.forEach((date, index) => {
-        const dateObj = new Date(date);
-        const actualDay = dateObj.getDay();
-        const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
-        console.log(`${weekdays[index]} (${date}): 실제 요일 ${dayNames[actualDay]}`);
-    });
-    return dates;
-};
-
-// 브라우저 주간 선택기와 우리 계산 비교 테스트
-window.testBrowserWeek = () => {
-    // 브라우저의 input[type="week"] 값 가져오기
-    const weekInput = document.getElementById('week-selector');
-    const browserWeek = weekInput.value;
-    console.log(`브라우저 주간 선택기 값: ${browserWeek}`);
-    
-    // 우리가 계산한 날짜들
-    const ourDates = homeworkSystem.getWeekDates(browserWeek);
-    console.log(`우리가 계산한 날짜들:`, ourDates);
-    
-    // 각 날짜의 실제 요일 확인
-    const weekdays = ['월', '화', '수', '목', '금'];
-    ourDates.forEach((date, index) => {
-        const dateObj = new Date(date);
-        const actualDay = dateObj.getDay();
-        const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
-        console.log(`${weekdays[index]} (${date}): 실제 요일 ${dayNames[actualDay]}`);
-    });
-    
-    return ourDates;
-};
-
-// 간단한 테스트 함수
-window.testCurrentWeek = () => {
-    const currentWeek = homeworkSystem.getCurrentWeek();
-    console.log(`현재 주차: ${currentWeek}`);
-    const dates = homeworkSystem.getWeekDates(currentWeek);
-    console.log(`현재 주차의 날짜들:`, dates);
-    
-    const weekdays = ['월', '화', '수', '목', '금'];
-    dates.forEach((date, index) => {
-        const dateObj = new Date(date);
-        const actualDay = dateObj.getDay();
-        const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
-        console.log(`${weekdays[index]} (${date}): 실제 요일 ${dayNames[actualDay]}`);
-    });
-    
-    return dates;
-};
-
-// 2025년 39주차 특별 테스트
-window.testWeek39 = () => {
-    console.log('=== 2025년 39주차 테스트 ===');
-    const dates = homeworkSystem.getWeekDates('2025-W39');
-    console.log('계산된 날짜들:', dates);
-    
-    const weekdays = ['월', '화', '수', '목', '금'];
-    dates.forEach((date, index) => {
-        const dateObj = new Date(date);
-        const actualDay = dateObj.getDay();
-        const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
-        console.log(`${weekdays[index]} (${date}): 실제 요일 ${dayNames[actualDay]}`);
-    });
-    
-    // 2025년 9월 22일이 월요일인지 확인
-    const sep22 = new Date('2025-09-22');
-    console.log(`2025-09-22의 요일: ${['일', '월', '화', '수', '목', '금', '토'][sep22.getDay()]}`);
-    
-    return dates;
-};
-
-// 2025년 9월 22일이 월요일인지 확인하는 테스트
-window.testSpecificDate = () => {
-    const testDate = new Date('2025-09-22');
-    console.log(`2025-09-22의 요일: ${['일', '월', '화', '수', '목', '금', '토'][testDate.getDay()]}`);
-    
-    // 2025년 9월 22일이 포함된 주차 찾기
-    const year = 2025;
-    const month = 8; // 9월 (0부터 시작)
-    const day = 22;
-    
-    // 해당 날짜가 속한 주의 월요일 찾기
-    const targetDate = new Date(year, month, day);
-    const dayOfWeek = targetDate.getDay();
-    const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
-    const monday = new Date(targetDate);
-    monday.setDate(targetDate.getDate() + mondayOffset);
-    
-    console.log(`해당 주의 월요일: ${monday.toISOString().split('T')[0]}`);
-    console.log(`해당 주의 월요일 요일: ${['일', '월', '화', '수', '목', '금', '토'][monday.getDay()]}`);
-};
